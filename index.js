@@ -5,7 +5,7 @@ const {authenticate} = require('@google-cloud/local-auth');
 const {google} = require('googleapis');
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
+const SCOPES = ['https://www.googleapis.com/auth/drive'];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
@@ -124,5 +124,81 @@ async function uploadBasic(authClient) {
     throw err;
   }
 }
+/**
+ * Downloads a file
+ * @param{string} realFileId file ID
+ * @return{obj} file status
+ * */
 
-authorize().then(uploadBasic).catch(console.error);
+/**
+ * Search file in drive location
+ * @return{obj} data file
+ * */
+async function searchFile(authClient) {
+  // const {GoogleAuth} = require('google-auth-library');
+  // const {google} = require('googleapis');
+
+  // Get credentials and build service
+  // TODO (developer) - Use appropriate auth mechanism for your app
+  // const auth = new GoogleAuth({
+  //   scopes: 'https://www.googleapis.com/auth/drive',
+  // });
+  const service = google.drive({version: 'v3', auth: authClient});
+  const files = [];
+  try {
+    const res = await service.files.list({
+      q: 'name=\'photo.jpg\'',
+      fields: 'nextPageToken, files(id, name)',
+      spaces: 'drive',
+    });
+    Array.prototype.push.apply(files, res.files);
+    res.data.files.forEach(function(file) {
+      console.log('Found file:', file.name, file.id);
+      y = file.id;
+    });
+    //console.log(y);
+    return y;
+    //return res.data.files;
+  } catch (err) {
+    // TODO(developer) - Handle error
+    throw err;
+  }
+}
+
+async function downloadFile(authClient) {
+  // Get credentials and build service
+  // TODO (developer) - Use appropriate auth mechanism for your app
+  let fs = require('fs');
+
+  realFileId=await searchFile(authClient);
+  //realFileId="1FiK_4hYP20JYnPE-uXJHGUTGKqzYy6Ka";
+
+  console.log(realFileId);
+
+  const service = google.drive({version: 'v3', auth:authClient});
+
+  fileId = realFileId;
+  try {
+    const file = await service.files.get({
+      fileId: realFileId ,
+      mimeType: 'image/jpeg',
+      alt: 'media'
+    }, {
+      responseType: "arraybuffer"
+    },
+    function(err, { data }){
+      fs.writeFile("photod.jpg", Buffer.from(data), err=>{
+          if(err) console.log(err);
+      });
+    });
+  //   console.log(file.status);
+
+
+
+  //   return file.status;
+  } catch (err) {
+    // TODO(developer) - Handle error
+    throw err;
+  }
+}
+authorize().then(downloadFile).catch(console.error);
