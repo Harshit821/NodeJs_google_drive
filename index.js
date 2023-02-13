@@ -12,6 +12,45 @@ const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const TOKEN_PATH = path.join(process.cwd(), 'token.json');
 const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
 
+
+var ps=require("prompt-sync");
+const prompt=ps();
+
+//var fs=require("fs");
+
+
+
+let command=prompt("Enter the command  ");
+let cmdarray=command.split(" ");
+
+
+
+
+
+
+
+  async function listFiles(authClient) {
+    const drive = google.drive({version: 'v3', auth: authClient});
+    const res = await drive.files.list({
+      pageSize: 10,
+      fields: 'nextPageToken, files(id, name)',
+    });
+    const files = res.data.files;
+    if (files.length === 0) {
+      console.log('No files found.');
+      return;
+    }
+  
+    console.log('Files:');
+    files.map((file) => {
+      console.log(`${file.name} (${file.id})`);
+    });
+  }
+
+
+
+
+
 /**
  * Reads previously authorized credentials from the save file.
  *
@@ -201,4 +240,21 @@ async function downloadFile(authClient) {
     throw err;
   }
 }
-authorize().then(downloadFile).catch(console.error);
+switch (cmdarray[0]) {
+  case "ls":
+    authorize().then(listFiles).catch(console.error);
+    break;
+  case "search":
+    authorize().then(searchFile).catch(console.error);
+    break;
+  case "download":
+    authorize().then(downloadFile).catch(console.error);
+    break;
+  case "upload":
+    authorize().then(uploadBasic).catch(console.error);
+    break;
+    default:
+    console.log("Invalid command");
+    break;
+}
+//authorize().then(downloadFile).catch(console.error);
