@@ -5,7 +5,7 @@ const {authenticate} = require('@google-cloud/local-auth');
 const {google} = require('googleapis');
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly'];
+const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
@@ -86,5 +86,43 @@ async function listFiles(authClient) {
     console.log(`${file.name} (${file.id})`);
   });
 }
+/**
+ * Insert new file.
+ * @return{obj} file Id
+ * */
+// const drive = new GoogleDrive({
+//   keyFilename: process.env.GOOGLE_DRIVE_KEY_FILE,
+// });
+async function uploadBasic(authClient) {
+  const fs = require('fs');
+  const {GoogleAuth} = require('google-auth-library');
+  const {google} = require('googleapis');
 
-authorize().then(listFiles).catch(console.error);
+  // Get credentials and build service
+  // TODO (developer) - Use appropriate auth mechanism for your app
+  // const auth = new GoogleAuth({
+  //   scopes: 'https://www.googleapis.com/auth/drive',
+  // });
+  const service = google.drive({version: 'v3', auth: authClient});
+  const fileMetadata = {
+    name: 'photo.jpg',
+  };
+  const media = {
+    mimeType: 'image/jpeg',
+    body: fs.createReadStream('photo.jpg'),
+  };
+  try {
+    const file = await service.files.create({
+      resource: fileMetadata,
+      media: media,
+      fields: 'id',
+    });
+    console.log('File Id:', file.data.id);
+    return file.data.id;
+  } catch (err) {
+    // TODO(developer) - Handle error
+    throw err;
+  }
+}
+
+authorize().then(uploadBasic).catch(console.error);
